@@ -24,30 +24,30 @@ def generate_standings():
         # 1. Main Standings Data (K-R)
         rank      = df.iloc[i, 10] # K
         player    = df.iloc[i, 11] # L
-        # Column M is blank
         total     = df.iloc[i, 13] # N
         group_p   = df.iloc[i, 14] # O
         bracket_p = df.iloc[i, 15] # P
         possible  = df.iloc[i, 16] # Q
         bonus     = df.iloc[i, 17] # R
 
-        # 2. Predictions Data (S-Z) - 4 pairs of scores
-        # Game 1: S(18), T(19) | Game 2: U(20), V(21) | Game 3: W(22), X(23) | Game 4: Y(24), Z(25)
+        # 2. Predictions Data (S-Z)
+        # S(18), T(19) | U(20), V(21) | W(22), X(23) | Y(24), Z(25)
         scores = [df.iloc[i, col] for col in range(18, 26)]
-        # Replace empty scores with '-'
         scores = [s if pd.notna(s) else '-' for s in scores]
 
         rows_html += f"""
         <tr>
             <td class="main-cell rank">{rank}</td>
             <td class="main-cell player">{player}</td>
-            <td class="main-cell">{total}</td>
+            <td class="main-cell bold">{total}</td>
             <td class="main-cell small">{group_p}</td>
             <td class="main-cell small">{bracket_p}</td>
             <td class="main-cell small">{possible}</td>
             <td class="main-cell small">{bonus}</td>
             
-            <td class="gap"></td> <td class="score-cell left">{scores[0]}</td><td class="score-cell right">{scores[1]}</td>
+            <td class="gap"></td> 
+
+            <td class="score-cell left">{scores[0]}</td><td class="score-cell right">{scores[1]}</td>
             <td class="mini-gap"></td>
             <td class="score-cell left">{scores[2]}</td><td class="score-cell right">{scores[3]}</td>
             <td class="mini-gap"></td>
@@ -64,58 +64,63 @@ def generate_standings():
     <head>
         <meta charset="UTF-8">
         <style>
-            body {{ font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; color: #333; }}
-            .wrapper {{ overflow-x: auto; padding: 20px; }}
-            table {{ border-collapse: collapse; background: white; margin: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+            body {{ font-family: 'Segoe UI', Helvetica, Arial, sans-serif; background: #f8f9fa; color: #212529; padding: 20px; }}
+            .wrapper {{ overflow-x: auto; }}
+            table {{ border-collapse: collapse; background: white; margin: auto; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }}
             
-            /* Header Styles */
-            th {{ background: #1b4332; color: white; padding: 12px 8px; font-size: 11px; text-transform: uppercase; }}
-            .prediction-header {{ background: #495057; }}
+            /* Headers */
+            th {{ background: #1b4332; color: white; padding: 10px; font-size: 11px; text-transform: uppercase; border: 1px solid #143225; }}
+            .upcoming-header {{ background: #2c3e50; font-size: 13px; letter-spacing: 1px; }}
+            .match-label {{ background: #495057; font-size: 10px; }}
             
-            /* Main Table Cells */
-            .main-cell {{ padding: 10px; border-bottom: 1px solid #eee; text-align: center; border-right: 1px solid #f9f9f9; }}
-            .rank {{ font-weight: bold; color: #666; }}
-            .player {{ text-align: left; font-weight: bold; min-width: 150px; }}
-            .small {{ font-size: 12px; color: #666; }}
+            /* Cells */
+            .main-cell {{ padding: 12px 10px; border-bottom: 1px solid #eee; text-align: center; }}
+            .rank {{ color: #888; font-weight: bold; width: 40px; }}
+            .player {{ text-align: left; font-weight: bold; min-width: 160px; border-right: 1px solid #eee; }}
+            .bold {{ font-weight: bold; color: #1b4332; font-size: 1.1em; }}
+            .small {{ font-size: 11px; color: #777; }}
 
-            /* Score Box Styles */
-            .score-cell {{ width: 30px; padding: 8px 0; text-align: center; border-bottom: 1px solid #eee; font-weight: bold; background: #fdfdfd; }}
-            .left {{ border-left: 1px solid #ddd; border-right: 1px solid #eee; color: #007bff; }}
-            .right {{ border-right: 1px solid #ddd; color: #dc3545; }}
+            /* Score Boxes */
+            .score-cell {{ width: 28px; border-bottom: 1px solid #eee; font-weight: bold; text-align: center; background: #fff; }}
+            .left {{ border-left: 1px solid #ddd; color: #0056b3; }}
+            .right {{ border-right: 1px solid #ddd; color: #c82333; }}
             
-            /* Spacing */
-            .gap {{ width: 30px; background: #f4f7f6; border: none; }}
-            .mini-gap {{ width: 8px; background: #f4f7f6; border: none; }}
+            /* Gaps */
+            .gap {{ width: 25px; background: #f8f9fa; border: none; }}
+            .mini-gap {{ width: 6px; background: #f8f9fa; border: none; }}
             
-            tr:hover {{ background-color: #f1f8f5; }}
+            tr:nth-child(even) {{ background: #fdfdfd; }}
+            tr:hover {{ background: #f1f8f5; }}
         </style>
     </head>
     <body>
         <div class="wrapper">
-            <h1 style="text-align:center; color:#1b4332;">World Cup 2026 Pool Dashboard</h1>
+            <h1 style="text-align:center; color:#1b4332;">🏆 World Cup 2026 Pool</h1>
             <table>
                 <thead>
                     <tr>
-                        <th colspan="7">Tournament Standings</th>
+                        <th colspan="7">Current Standings</th>
                         <th class="gap"></th>
-                        <th colspan="2" class="prediction-header">Match 1</th>
-                        <th class="mini-gap"></th>
-                        <th colspan="2" class="prediction-header">Match 2</th>
-                        <th class="mini-gap"></th>
-                        <th colspan="2" class="prediction-header">Match 3</th>
-                        <th class="mini-gap"></th>
-                        <th colspan="2" class="prediction-header">Match 4</th>
+                        <th colspan="11" class="upcoming-header">Upcoming Match Predictions</th>
                     </tr>
                     <tr>
                         <th>Rank</th><th>Participant</th><th>Total</th>
-                        <th>Grp</th><th>Bkt</th><th>Poss</th><th>Bon</th>
+                        <th>Group</th><th>Bkt</th><th>Poss</th><th>Bonus</th>
                         <th class="gap"></th>
-                        <th>T1</th><th>T2</th><th></th><th>T1</th><th>T2</th><th></th><th>T1</th><th>T2</th><th></th><th>T1</th><th>T2</th>
+                        <th colspan="2" class="match-label">Match 1</th>
+                        <th class="mini-gap"></th>
+                        <th colspan="2" class="match-label">Match 2</th>
+                        <th class="mini-gap"></th>
+                        <th colspan="2" class="match-label">Match 3</th>
+                        <th class="mini-gap"></th>
+                        <th colspan="2" class="match-label">Match 4</th>
                     </tr>
                 </thead>
                 <tbody>{rows_html}</tbody>
             </table>
-            <p style="text-align:center; font-size:12px; color:#888;">Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            <p style="text-align:center; font-size:11px; color:#aaa; margin-top:20px;">
+                Generated from index.xlsm • {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+            </p>
         </div>
     </body>
     </html>
