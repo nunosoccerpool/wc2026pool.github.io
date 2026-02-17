@@ -1,0 +1,32 @@
+name: Update Standings Webpage
+on:
+  push:
+    paths:
+      - 'index.xlsm' # Only runs when the Excel file changes
+  workflow_dispatch: # Allows manual refresh
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install pandas openpyxl
+
+      - name: Run update script
+        run: python update_standings.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add index.html
+          git commit -m "Auto-update standings from Excel" || exit 0
+          git push
