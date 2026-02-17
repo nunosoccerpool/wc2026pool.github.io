@@ -5,127 +5,62 @@ import os
 # --- CONFIGURATION ---
 excel_file = 'index.xlsm' 
 sheet_name = 'index'
-start_row_index = 19  
-total_rows = 181
-header_row_index = 18
+start_row_index = 19  # Excel Row 20
+total_rows = 100      # Limit to 100 rows as requested
+start_col_index = 10  # Excel Column K
 
 def generate_standings():
     if not os.path.exists(excel_file):
-        print(f"File {excel_file} not found.")
+        print(f"Error: {excel_file} not found.")
         return
 
-    # Load the sheet - usecols forces Pandas to read at least up to Column Z (index 25)
+    # Load the sheet
     df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None, engine='openpyxl')
 
-    # Safety check: If Excel is smaller than expected, pad it with empty columns
-    # We need index 25 (Column Z)
-    while df.shape[1] < 26:
-        df[df.shape[1]] = ""
-
-    # --- PULL TEAM NAMES DYNAMICALLY ---
-    teams = []
-    for col in range(18, 26): # S to Z
-        val = df.iloc[header_row_index, col]
-        teams.append(str(val).strip() if pd.notna(val) and str(val).lower() != 'nan' else "")
+    # Safety check: ensure we don't go out of bounds if the sheet is small
+    available_rows = df.shape[0]
+    rows_to_process = min(total_rows, available_rows - start_row_index)
 
     rows_html = ""
 
-    # --- LOOP PLAYERS ---
-    for i in range(start_row_index, start_row_index + total_rows):
-        # Using a helper to avoid crashes if rows are missing
-        def get_val(r, c):
-            try: return df.iloc[r, c]
-            except: return ""
+    # Loop to generate exactly 100 rows
+    for i in range(start_row_index, start_row_index + rows_to_process):
+        # Extract data from Columns K through R
+        rank      = df.iloc[i, 10] # K
+        player    = df.iloc[i, 11] # L
+        # Column M (12) is skipped/blank per your layout
+        total     = df.iloc[i, 13] # N
+        group     = df.iloc[i, 14] # O
+        bracket   = df.iloc[i, 15] # P
+        possible  = df.iloc[i, 16] # Q
+        bonus     = df.iloc[i, 17] # R
 
-        rank      = get_val(i, 10) # K
-        player    = get_val(i, 11) # L
-        flag_code = str(get_val(i, 12)).lower().strip() # M
-        total     = get_val(i, 13) # N
-        group     = get_val(i, 14) # O
-        bracket   = get_val(i, 15) # P
-        possible  = get_val(i, 16) # Q
-        bonus     = get_val(i, 17) # R
-
-        # Predictions (S-Z)
-        s = [get_val(i, col) for col in range(18, 26)]
-        s = [val if pd.notna(val) and str(val).lower() != 'nan' else "" for val in s]
-
-        flag_html = f'<img src="https://flagcdn.com/w20/{flag_code}.png" width="20">' if len(flag_code) == 2 else ""
+        # Clean NaN values
+        fields = [rank, player, total, group, bracket, possible, bonus]
+        r, p, t, g, b, ps, bn = [v if pd.notna(v) else "" for v in fields]
 
         rows_html += f"""
         <tr>
-            <td class="excel-cell bold center">{rank}</td>
-            <td class="excel-cell player-bg">{player}</td>
-            <td class="excel-cell center">{flag_html}</td>
-            <td class="excel-cell bold center">{total}</td>
-            <td class="excel-cell grey-text center">{group}</td>
-            <td class="excel-cell grey-text center">{bracket}</td>
-            <td class="excel-cell grey-text center">{possible}</td>
-            <td class="excel-cell grey-text center border-right-maroon">{bonus}</td>
-            
-            <td class="pred-cell">{s[0]}</td><td class="pred-cell border-right-grey">{s[1]}</td>
-            <td class="pred-cell">{s[2]}</td><td class="pred-cell border-right-grey">{s[3]}</td>
-            <td class="pred-cell">{s[4]}</td><td class="pred-cell border-right-grey">{s[5]}</td>
-            <td class="pred-cell">{s[6]}</td><td class="pred-cell">{s[7]}</td>
-        </tr>
-        """
+            <td class="col-rank">{r}</td>
+            <td class="col-name">{p}</td>
+            <td class="col-total">{t}</td>
+            <td class="col-grey">{g}</td>
+            <td class="col-grey">{b}</td>
+            <td class="col-grey">{ps}</td>
+            <td class="col-grey">{bn}</td>
+        </tr>"""
 
-    # --- HTML TEMPLATE (remains same as previous) ---
+    # --- MOBILE-FRIENDLY HTML5 TEMPLATE ---
     full_html = f"""
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>WC 2026 Standings</title>
         <style>
-            body {{ font-family: Arial, sans-serif; background: white; color: #333; }}
-            .container {{ width: fit-content; margin: auto; text-align: center; }}
-            h1 {{ color: #800000; font-size: 72px; margin: 10px 0 0 0; font-family: 'Arial Black'; }}
-            .last-update {{ font-style: italic; color: #666; font-size: 14px; margin-bottom: 20px; }}
-            table {{ border-collapse: collapse; margin: auto; border: 2px solid #800000; }}
-            th {{ border: 1px solid #800000; padding: 8px; font-size: 11px; background: #e9e9e9; }}
-            .vertical-text {{ writing-mode: vertical-rl; transform: rotate(180deg); font-size: 11px; padding: 8px 2px; width: 22px; height: 50px; text-align: left; }}
-            .excel-cell {{ border: 1px solid #800000; padding: 6px; font-size: 14px; }}
-            .player-bg {{ background-color: #c6efce; text-align: left; padding-left: 10px; min-width: 150px; }}
-            .pred-cell {{ border: 1px solid #ccc; width: 25px; text-align: center; color: #555; font-size: 13px; }}
-            .center {{ text-align: center; }}
-            .bold {{ font-weight: bold; }}
-            .grey-text {{ color: #999; }}
-            .border-right-maroon {{ border-right: 2px solid #800000; }}
-            .border-right-grey {{ border-right: 2px solid #999; }}
-            .trophy {{ width: 60px; margin: 5px; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>STANDINGS</h1>
-            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/e/e3/2026_FIFA_World_Cup_Logo.svg/1200px-2026_FIFA_World_Cup_Logo.svg.png" class="trophy">
-            <div class="last-update">Last updated on:<br><b>{datetime.now().strftime('%b %d, %Y  %I:%M %p')}</b></div>
-            <table>
-                <thead>
-                    <tr>
-                        <th colspan="8" style="border:none;"></th>
-                        <th colspan="8" style="color:#999; font-weight:normal; border:none; text-align:right;">Upcoming Match Predictions</th>
-                    </tr>
-                    <tr>
-                        <th>RANK</th><th>PARTICIPANT</th><th></th><th>TOTAL POINTS</th>
-                        <th style="color:#800000;">Group<br>Stage<br>Points</th>
-                        <th style="color:#800000;">Bracket<br>Stage<br>Points</th>
-                        <th style="color:#800000;">Possible<br>Points<br>Left</th>
-                        <th style="color:#800000;">Bonus<br>Game</th>
-                        <th class="vertical-text">{teams[0]}</th><th class="vertical-text">{teams[1]}</th>
-                        <th class="vertical-text">{teams[2]}</th><th class="vertical-text">{teams[3]}</th>
-                        <th class="vertical-text">{teams[4]}</th><th class="vertical-text">{teams[5]}</th>
-                        <th class="vertical-text">{teams[6]}</th><th class="vertical-text">{teams[7]}</th>
-                    </tr>
-                </thead>
-                <tbody>{rows_html}</tbody>
-            </table>
-        </div>
-    </body>
-    </html>
-    """
-    with open('index.html', 'w', encoding='utf-8') as f:
-        f.write(full_html)
-
-if __name__ == "__main__":
-    generate_standings()
+            :root {{
+                --maroon: #800000;
+                --excel-green: #c6efce;
+                --border-color: #ddd;
+            }}
