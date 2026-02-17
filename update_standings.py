@@ -3,7 +3,7 @@ from datetime import datetime
 
 # 1. Load the Excel file
 # Use 'openpyxl' for .xlsm files
-file_path = 'standings.xlsm'
+file_path = 'index-2022-11-22 BIG.xlsm'
 df = pd.read_excel(file_path, engine='openpyxl',
 sheet_name='index')
 
