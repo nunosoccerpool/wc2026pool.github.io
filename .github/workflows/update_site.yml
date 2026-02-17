@@ -8,7 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+  permissions:
+    contents: write  # This gives the robot permission to push the index.html
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
