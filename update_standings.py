@@ -1,132 +1,162 @@
 import pandas as pd
 from datetime import datetime
+import os
 
-# 1. Load the data
-# Make sure this filename matches yours exactly!
-file_path = 'index.xlsm' 
-df = pd.read_excel(file_path, engine='openpyxl')
+# 1. Configuration - Change 'YourActualFileName.xlsm' to your file's name
+excel_file = 'index.xlsm' 
+sheet_to_read = 'index'
 
-# 2. Generate the HTML Table
-# 'table-style' is a custom class we'll define below
-table_html = df.to_html(index=False, classes='standings-table')
+def generate_standings():
+    # Check if file exists to avoid crashes
+    if not os.path.exists(excel_file):
+        print(f"Error: {excel_file} not found.")
+        return
 
-# 3. Create the Full Webpage Template
-html_content = f"""
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WC 2026 Pool Standings</title>
-    <style>
-        :root {{
-            --pitch-green: #1b4332;
-            --grass-light: #2d6a4f;
-            --trophy-gold: #ffca3a;
-            --white: #ffffff;
-        }}
+    # 2. Read the specific "index" sheet
+    # We use engine='openpyxl' for .xlsm files
+    df = pd.read_excel(excel_file, sheet_name=sheet_to_read, engine='openpyxl')
 
-        body {{
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #e9ecef;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }}
+    # 3. Data Cleaning
+    # Removes rows and columns that are completely empty
+    df = df.dropna(how='all', axis=0).dropna(how='all', axis=1)
+    # Fills any remaining empty cells with a blank space so the table stays aligned
+    df = df.fillna('')
 
-        .container {{
-            max-width: 900px;
-            margin: auto;
-            background: var(--white);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }}
+    # 4. Convert Dataframe to HTML
+    table_html = df.to_html(index=False, classes='standings-table')
 
-        header {{
-            text-align: center;
-            border-bottom: 3px solid var(--pitch-green);
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-        }}
+    # 5. The Design (CSS) and Layout
+    html_template = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>WC 2026 Pool Standings</title>
+        <style>
+            :root {{
+                --pitch-green: #1b4332;
+                --grass-light: #2d6a4f;
+                --gold: #ffca3a;
+                --white: #ffffff;
+                --dark-text: #212529;
+            }}
 
-        h1 {{
-            color: var(--pitch-green);
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }}
+            body {{
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #f0f2f5;
+                margin: 0;
+                padding: 20px;
+                display: flex;
+                justify-content: center;
+            }}
 
-        .update-time {{
-            font-size: 0.9em;
-            color: #666;
-            font-style: italic;
-        }}
+            .dashboard {{
+                width: 100%;
+                max-width: 1000px;
+                background: var(--white);
+                padding: 30px;
+                border-radius: 20px;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            }}
 
-        /* Table Styling */
-        .standings-table {{
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 16px;
-        }}
+            header {{
+                text-align: center;
+                margin-bottom: 30px;
+                border-bottom: 4px solid var(--pitch-green);
+                padding-bottom: 15px;
+            }}
 
-        .standings-table th {{
-            background-color: var(--pitch-green);
-            color: var(--white);
-            padding: 15px;
-            text-align: center;
-            text-transform: uppercase;
-        }}
+            h1 {{
+                color: var(--pitch-green);
+                font-size: 2.5em;
+                margin: 0;
+                letter-spacing: -1px;
+            }}
 
-        .standings-table td {{
-            padding: 12px;
-            text-align: center;
-            border-bottom: 1px solid #dee2e6;
-        }}
+            .timestamp {{
+                color: #6c757d;
+                font-size: 0.9em;
+                margin-top: 5px;
+            }}
 
-        /* Highlight the Leader */
-        .standings-table tr:first-child td {{
-            background-color: rgba(255, 202, 58, 0.2);
-            font-weight: bold;
-        }}
+            /* Soccer Table Styling */
+            .standings-table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+            }}
 
-        /* Zebra Striping */
-        .standings-table tr:nth-child(even) {{
-            background-color: #f8f9fa;
-        }}
+            .standings-table th {{
+                background-color: var(--pitch-green);
+                color: var(--white);
+                padding: 18px;
+                text-align: center;
+                text-transform: uppercase;
+                font-size: 0.85em;
+                letter-spacing: 1px;
+            }}
 
-        .standings-table tr:hover {{
-            background-color: #f1f1f1;
-        }}
+            .standings-table td {{
+                padding: 15px;
+                text-align: center;
+                border-bottom: 1px solid #eee;
+                color: var(--dark-text);
+                font-size: 1.05em;
+            }}
 
-        /* Mobile Friendly */
-        @media (max-width: 600px) {{
-            .container {{ padding: 10px; }}
-            .standings-table {{ font-size: 14px; }}
-            .standings-table th, .standings-table td {{ padding: 8px; }}
-        }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🏆 WC 2026 Pool Standings</h1>
-            <p class="update-time">Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-        </header>
-        
-        {table_html}
+            /* Highlight the Leader */
+            .standings-table tr:first-child td {{
+                background-color: rgba(255, 202, 58, 0.15);
+                font-weight: bold;
+                border-left: 5px solid var(--gold);
+            }}
 
-        <footer style="margin-top: 30px; text-align: center; font-size: 0.8em; color: #888;">
-            <p>Automated by Python & GitHub Actions</p>
-        </footer>
-    </div>
-</body>
-</html>
-"""
+            /* Zebra Stripes */
+            .standings-table tr:nth-child(even) {{
+                background-color: #fcfcfc;
+            }}
 
-# 4. Save the file
-with open('index.html', 'w', encoding='utf-8') as f:
-    f.write(html_content)
+            .standings-table tr:hover {{
+                background-color: #f1f8f5;
+            }}
 
-print("index.html created successfully with pro styling!")
+            /* Mobile Responsiveness */
+            @media (max-width: 768px) {{
+                body {{ padding: 10px; }}
+                .dashboard {{ padding: 15px; }}
+                h1 {{ font-size: 1.8em; }}
+                .standings-table td, .standings-table th {{
+                    padding: 10px 5px;
+                    font-size: 0.9em;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="dashboard">
+            <header>
+                <h1>🏆 World Cup 2026 Pool</h1>
+                <p class="timestamp">Live Leaderboard • Last Updated: {datetime.now().strftime('%b %d, %Y | %H:%M:%S')}</p>
+            </header>
+            
+            <div style="overflow-x: auto;">
+                {table_html}
+            </div>
+
+            <footer style="text-align: center; margin-top: 40px; color: #adb5bd; font-size: 0.8em;">
+                Proudly powered by Python & GitHub Pages
+            </footer>
+        </div>
+    </body>
+    </html>
+    """
+
+    # 6. Save the final HTML
+    with open('index.html', 'w', encoding='utf-8') as f:
+        f.write(html_template)
+    
+    print("Success: index.html has been updated from the 'index' sheet!")
+
+if __name__ == "__main__":
+    generate_standings()
