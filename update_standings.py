@@ -4,7 +4,8 @@ from datetime import datetime
 # 1. Load the Excel file
 # Use 'openpyxl' for .xlsm files
 file_path = 'standings.xlsm'
-df = pd.read_excel(file_path, engine='openpyxl')
+df = pd.read_excel(file_path, engine='openpyxl',
+sheet_name='index')
 
 # 2. Get the current timestamp
 # Format: Month Day, Year at Hour:Minute
