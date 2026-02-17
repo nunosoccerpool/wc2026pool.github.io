@@ -2,161 +2,98 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# 1. Configuration - Change 'YourActualFileName.xlsm' to your file's name
-excel_file = 'index.xlsm' 
-sheet_to_read = 'index'
+# --- CONFIGURATION ---
+excel_file = 'index.xlsm' # <--- MAKE SURE THIS MATCHES YOUR FILENAME
+sheet_name = 'index'
+# Row 20 in Excel is index 19 in Python
+start_row_index = 19 
+total_rows = 181
+# Column K in Excel is index 10 in Python
+start_col_index = 10 
 
 def generate_standings():
-    # Check if file exists to avoid crashes
     if not os.path.exists(excel_file):
-        print(f"Error: {excel_file} not found.")
+        print("Excel file not found!")
         return
 
-    # 2. Read the specific "index" sheet
-    # We use engine='openpyxl' for .xlsm files
-    df = pd.read_excel(excel_file, sheet_name=sheet_to_read, engine='openpyxl')
+    # Load the sheet with no header logic to maintain coordinate control
+    df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None, engine='openpyxl')
 
-    # 3. Data Cleaning
-    # Removes rows and columns that are completely empty
-    df = df.dropna(how='all', axis=0).dropna(how='all', axis=1)
-    # Fills any remaining empty cells with a blank space so the table stays aligned
-    df = df.fillna('')
+    rows_html = ""
 
-    # 4. Convert Dataframe to HTML
-    table_html = df.to_html(index=False, classes='standings-table')
+    # Loop from Row 20 to Row 200 (181 rows total)
+    for i in range(start_row_index, start_row_index + total_rows):
+        # Extract data based on relative column positions from K (index 10)
+        rank      = df.iloc[i, start_col_index]     # K (10)
+        player    = df.iloc[i, start_col_index + 1] # L (11)
+        blank     = ""                              # M (12) - Keeping it blank as requested
+        total     = df.iloc[i, start_col_index + 3] # N (13)
+        group     = df.iloc[i, start_col_index + 4] # O (14)
+        bracket   = df.iloc[i, start_col_index + 5] # P (15)
+        possible  = df.iloc[i, start_col_index + 6] # Q (16)
+        bonus     = df.iloc[i, start_col_index + 7] # R (17)
 
-    # 5. The Design (CSS) and Layout
-    html_template = f"""
+        # Build the HTML row
+        rows_html += f"""
+        <tr>
+            <td>{rank}</td>
+            <td style="text-align: left; font-weight: bold;">{player}</td>
+            <td>{blank}</td>
+            <td style="font-weight: bold; color: #1b4332;">{total}</td>
+            <td>{group}</td>
+            <td>{bracket}</td>
+            <td>{possible}</td>
+            <td>{bonus}</td>
+        </tr>"""
+
+    # --- HTML TEMPLATE ---
+    full_html = f"""
     <!DOCTYPE html>
-    <html lang="en">
+    <html>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>WC 2026 Pool Standings</title>
         <style>
-            :root {{
-                --pitch-green: #1b4332;
-                --grass-light: #2d6a4f;
-                --gold: #ffca3a;
-                --white: #ffffff;
-                --dark-text: #212529;
-            }}
-
-            body {{
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background-color: #f0f2f5;
-                margin: 0;
-                padding: 20px;
-                display: flex;
-                justify-content: center;
-            }}
-
-            .dashboard {{
-                width: 100%;
-                max-width: 1000px;
-                background: var(--white);
-                padding: 30px;
-                border-radius: 20px;
-                box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            }}
-
-            header {{
-                text-align: center;
-                margin-bottom: 30px;
-                border-bottom: 4px solid var(--pitch-green);
-                padding-bottom: 15px;
-            }}
-
-            h1 {{
-                color: var(--pitch-green);
-                font-size: 2.5em;
-                margin: 0;
-                letter-spacing: -1px;
-            }}
-
-            .timestamp {{
-                color: #6c757d;
-                font-size: 0.9em;
-                margin-top: 5px;
-            }}
-
-            /* Soccer Table Styling */
-            .standings-table {{
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 10px;
-            }}
-
-            .standings-table th {{
-                background-color: var(--pitch-green);
-                color: var(--white);
-                padding: 18px;
-                text-align: center;
-                text-transform: uppercase;
-                font-size: 0.85em;
-                letter-spacing: 1px;
-            }}
-
-            .standings-table td {{
-                padding: 15px;
-                text-align: center;
-                border-bottom: 1px solid #eee;
-                color: var(--dark-text);
-                font-size: 1.05em;
-            }}
-
-            /* Highlight the Leader */
-            .standings-table tr:first-child td {{
-                background-color: rgba(255, 202, 58, 0.15);
-                font-weight: bold;
-                border-left: 5px solid var(--gold);
-            }}
-
-            /* Zebra Stripes */
-            .standings-table tr:nth-child(even) {{
-                background-color: #fcfcfc;
-            }}
-
-            .standings-table tr:hover {{
-                background-color: #f1f8f5;
-            }}
-
-            /* Mobile Responsiveness */
-            @media (max-width: 768px) {{
-                body {{ padding: 10px; }}
-                .dashboard {{ padding: 15px; }}
-                h1 {{ font-size: 1.8em; }}
-                .standings-table td, .standings-table th {{
-                    padding: 10px 5px;
-                    font-size: 0.9em;
-                }}
-            }}
+            body {{ font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; padding: 20px; }}
+            .container {{ max-width: 1100px; margin: auto; background: white; padding: 20px; border-radius: 12px; shadow: 0 4px 15px rgba(0,0,0,0.1); }}
+            h1 {{ text-align: center; color: #1b4332; text-transform: uppercase; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+            th {{ background: #1b4332; color: white; padding: 12px; font-size: 0.8em; text-transform: uppercase; }}
+            td {{ padding: 10px; border-bottom: 1px solid #eee; text-align: center; font-size: 0.95em; }}
+            tr:nth-child(even) {{ background: #fafafa; }}
+            tr:hover {{ background: #f1f8f5; }}
+            .update-tag {{ text-align: center; font-size: 0.8em; color: #888; margin-top: 20px; }}
         </style>
     </head>
     <body>
-        <div class="dashboard">
-            <header>
-                <h1>🏆 World Cup 2026 Pool</h1>
-                <p class="timestamp">Live Leaderboard • Last Updated: {datetime.now().strftime('%b %d, %Y | %H:%M:%S')}</p>
-            </header>
-            
-            <div style="overflow-x: auto;">
-                {table_html}
-            </div>
-
-            <footer style="text-align: center; margin-top: 40px; color: #adb5bd; font-size: 0.8em;">
-                Proudly powered by Python & GitHub Pages
-            </footer>
+        <div class="container">
+            <h1>🏆 World Cup 2026 Standings</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Participant</th>
+                        <th></th>
+                        <th>Total Points</th>
+                        <th>Group Stage</th>
+                        <th>Bracket Stage</th>
+                        <th>Possible Left</th>
+                        <th>Bonus Game</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows_html}
+                </tbody>
+            </table>
+            <div class="update-tag">Last Sync: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
         </div>
     </body>
     </html>
     """
 
-    # 6. Save the final HTML
     with open('index.html', 'w', encoding='utf-8') as f:
-        f.write(html_template)
-    
-    print("Success: index.html has been updated from the 'index' sheet!")
+        f.write(full_html)
+    print("Webpage successfully mapped to K20:R200!")
 
 if __name__ == "__main__":
     generate_standings()
