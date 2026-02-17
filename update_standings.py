@@ -5,10 +5,8 @@ import os
 # --- CONFIGURATION ---
 excel_file = 'index.xlsm' 
 sheet_name = 'index'
-# Player data starts at Row 20 (index 19)
 start_row_index = 19  
 total_rows = 181
-# Team Names for vertical headers are in Row 19 (index 18)
 header_row_index = 18
 
 def generate_standings():
@@ -16,31 +14,41 @@ def generate_standings():
         print(f"File {excel_file} not found.")
         return
 
-    # Load the sheet
+    # Load the sheet - usecols forces Pandas to read at least up to Column Z (index 25)
     df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None, engine='openpyxl')
 
+    # Safety check: If Excel is smaller than expected, pad it with empty columns
+    # We need index 25 (Column Z)
+    while df.shape[1] < 26:
+        df[df.shape[1]] = ""
+
     # --- PULL TEAM NAMES DYNAMICALLY ---
-    # S(18) to Z(25) in Row 19 (index 18)
-    teams = [str(df.iloc[header_row_index, col]).strip() for col in range(18, 26)]
-    # Replace NaN or empty with space
-    teams = [t if t != 'nan' else "" for t in teams]
+    teams = []
+    for col in range(18, 26): # S to Z
+        val = df.iloc[header_row_index, col]
+        teams.append(str(val).strip() if pd.notna(val) and str(val).lower() != 'nan' else "")
 
     rows_html = ""
 
     # --- LOOP PLAYERS ---
     for i in range(start_row_index, start_row_index + total_rows):
-        rank      = df.iloc[i, 10] # K
-        player    = df.iloc[i, 11] # L
-        flag_code = str(df.iloc[i, 12]).lower().strip() # M
-        total     = df.iloc[i, 13] # N
-        group     = df.iloc[i, 14] # O
-        bracket   = df.iloc[i, 15] # P
-        possible  = df.iloc[i, 16] # Q
-        bonus     = df.iloc[i, 17] # R
+        # Using a helper to avoid crashes if rows are missing
+        def get_val(r, c):
+            try: return df.iloc[r, c]
+            except: return ""
+
+        rank      = get_val(i, 10) # K
+        player    = get_val(i, 11) # L
+        flag_code = str(get_val(i, 12)).lower().strip() # M
+        total     = get_val(i, 13) # N
+        group     = get_val(i, 14) # O
+        bracket   = get_val(i, 15) # P
+        possible  = get_val(i, 16) # Q
+        bonus     = get_val(i, 17) # R
 
         # Predictions (S-Z)
-        s = [df.iloc[i, col] for col in range(18, 26)]
-        s = [val if pd.notna(val) else "" for val in s]
+        s = [get_val(i, col) for col in range(18, 26)]
+        s = [val if pd.notna(val) and str(val).lower() != 'nan' else "" for val in s]
 
         flag_html = f'<img src="https://flagcdn.com/w20/{flag_code}.png" width="20">' if len(flag_code) == 2 else ""
 
@@ -62,7 +70,7 @@ def generate_standings():
         </tr>
         """
 
-    # --- HTML TEMPLATE ---
+    # --- HTML TEMPLATE (remains same as previous) ---
     full_html = f"""
     <!DOCTYPE html>
     <html>
