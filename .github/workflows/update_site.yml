@@ -3,7 +3,7 @@ name: Update Standings Webpage
 on:
   push:
     paths:
-      - 'standings.xls' # Only runs when you update the Excel file
+      - 'index-2022-11-22 BIG.xlsm' # Only runs when you update the Excel file
 
 jobs:
   build:
